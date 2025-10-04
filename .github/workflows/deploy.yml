@@ -27,9 +27,9 @@ jobs:
       # Cache cargo artifacts
       - uses: Swatinem/rust-cache@v2
 
-      # Install trunk
-      - name: Install Trunk
-        run: cargo install trunk
+      - uses: jetli/trunk-action@v0.5.1
+        with:
+          version: 'latest'
 
       # Build with trunk
       - name: Build
