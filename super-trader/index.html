@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <!-- Trunk uses this base to resolve relative asset URLs -->
+    <base data-trunk-public-url />
+
+    <!-- Tell Trunk which Rust target to build.
+         Use data-target-name if you want the lib (crate_type = ["cdylib"]),
+         or data-bin if you want the binary. Pick exactly one. -->
+    <link
+      data-trunk
+      rel="rust"
+      href="Cargo.toml"
+      data-target-name="super_trader"
+    />
+
+    <style>
+      html, body {
+        margin: 0;
+        padding: 0;
+        height: 100%;
+        overflow: hidden;
+      }
+      #the_canvas {
+        width: 100vw;
+        height: 100vh;
+        display: block;
+      }
+    </style>
+  </head>
+  <body>
+    <canvas id="the_canvas"></canvas>
+    <!-- No <script type="module"> import needed:
+         Trunk will insert the right <script src="cfg_gui-<hash>.js"> for you. -->
+  </body>
+</html>
