@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <!-- Trunk uses this base to resolve relative asset URLs -->
+    <base href="/" />
+
+    <!-- Tell Trunk which Rust target to build.
+         Use data-target-name if you want the lib (crate_type = ["cdylib"]),
+         or data-bin if you want the binary. Pick exactly one. -->
+    
+<script type="module">
+import init, * as bindings from '/super-trader-12c76bfe36206b9d.js';
+const wasm = await init({ module_or_path: '/super-trader-12c76bfe36206b9d_bg.wasm' });
+
+
+window.wasmBindings = bindings;
+
+
+dispatchEvent(new CustomEvent("TrunkApplicationStarted", {detail: {wasm}}));
+
+</script>
+
+    <style>
+      html, body {
+        margin: 0;
+        padding: 0;
+        height: 100%;
+        overflow: hidden;
+      }
+      #the_canvas {
+        width: 100vw;
+        height: 90dvh;
+        display: block;
+      }
+    </style>
+  <link rel="modulepreload" href="/super-trader-12c76bfe36206b9d.js" crossorigin="anonymous" integrity="sha384-ZQZZdhS85AfyZ4R+Jyx86Dp2ztQcSkIVRSTaRjSx0POX4Dzox3VtfZ24NkS9T2IR"><link rel="preload" href="/super-trader-12c76bfe36206b9d_bg.wasm" crossorigin="anonymous" integrity="sha384-H5Gybl8clv/TcotEstspFe3spaSjkqscyKOXiRqkJRIPuhskjvd1gveW1G/tfyyt" as="fetch" type="application/wasm"></head>
+  <body>
+    <canvas id="the_canvas"></canvas>
+    <!-- No <script type="module"> import needed:
+         Trunk will insert the right <script src="cfg_gui-<hash>.js"> for you. -->
+  </body>
+</html>
