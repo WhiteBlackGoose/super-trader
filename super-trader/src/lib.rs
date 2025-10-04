@@ -1,7 +1,7 @@
 use std::{cell::RefCell, collections::VecDeque, rc::Rc};
 
 use chrono::{DateTime, Local};
-use egui::{Button, Color32, Hyperlink, RichText};
+use egui::{Button, Color32, Hyperlink, Label, RichText};
 use egui_plot::{Line, Plot};
 use gloo_timers::future::TimeoutFuture;
 use rand_distr::Distribution;
@@ -40,63 +40,67 @@ impl eframe::App for HelloApp {
                 .show(ui, |ui| {
                     if let Some(_game_over_time) = *self.game_over.borrow() {
                         ui.vertical_centered(|ui| {
-                            ui.label(
-                                RichText::new("Stock collapsed")
-                                    .size(32.0)
-                                    .color(Color32::RED),
+                            ui.add_sized(
+                                [w / 2.0, 60.0],
+                                Label::new(
+                                    RichText::new("Stock collapsed")
+                                        .size(32.0)
+                                        .color(Color32::RED),
+                                ),
                             );
                             ui.label(RichText::new(
                                 "Game over, your remaining stocks are sold for 0",
                             ));
                             self.shares_count = 0;
                         });
-                    }
-                    if ui
-                        .add_sized(
-                            [w / 2.0, 60.0],
-                            Button::new(
-                                RichText::new(format!("Buy {:.0}€", last_price_buy))
-                                    .color(Color32::WHITE) // white text
-                                    .size(32.0)
-                                    .strong(),
+                    } else {
+                        if ui
+                            .add_sized(
+                                [w / 2.0, 60.0],
+                                Button::new(
+                                    RichText::new(format!("Buy {:.0}€", last_price_buy))
+                                        .color(Color32::WHITE) // white text
+                                        .size(32.0)
+                                        .strong(),
+                                )
+                                .wrap_mode(egui::TextWrapMode::Extend)
+                                .fill(if can_buy {
+                                    Color32::DARK_GREEN
+                                } else {
+                                    Color32::GRAY
+                                }),
                             )
-                            .wrap_mode(egui::TextWrapMode::Extend)
-                            .fill(if can_buy {
-                                Color32::DARK_GREEN
-                            } else {
-                                Color32::GRAY
-                            }),
-                        )
-                        .clicked()
-                        && can_buy
-                    {
-                        if self.shares_count == 0 {
-                            self.ref_portfolio_worth = self.cash;
+                            .clicked()
+                            && can_buy
+                        {
+                            if self.shares_count == 0 {
+                                self.ref_portfolio_worth = self.cash;
+                            }
+                            self.cash -= last_price_buy;
+                            self.shares_count += 1;
                         }
-                        self.cash -= last_price_buy;
-                        self.shares_count += 1;
-                    }
-                    if ui
-                        .add_sized(
-                            [w / 2.0, 60.0],
-                            Button::new(
-                                RichText::new(format!("Sell {:.0}€", last_price_sell))
-                                    .color(Color32::WHITE) // white text
-                                    .size(32.0)
-                                    .strong(),
+                        if ui
+                            .add_sized(
+                                [w / 2.0, 60.0],
+                                Button::new(
+                                    RichText::new(format!("Sell {:.0}€", last_price_sell))
+                                        .color(Color32::WHITE) // white text
+                                        .size(32.0)
+                                        .strong(),
+                                )
+                                .wrap_mode(egui::TextWrapMode::Extend)
+                                .fill(if can_sell {
+                                    Color32::DARK_RED
+                                } else {
+                                    Color32::GRAY
+                                }),
                             )
-                            .wrap_mode(egui::TextWrapMode::Extend)
-                            .fill(if can_sell {
-                                Color32::DARK_RED
-                            } else {
-                                Color32::GRAY
-                            }),
-                        )
-                        .clicked()
-                        && can_sell
-                    {
-                        self.cash += last_price_sell;
-                        self.shares_count -= 1;
+                            .clicked()
+                            && can_sell
+                        {
+                            self.cash += last_price_sell;
+                            self.shares_count -= 1;
+                        }
                     }
 
                     ui.end_row();
@@ -220,7 +224,7 @@ pub async fn start() -> Result<(), wasm_bindgen::JsValue> {
                 let ctx = cc.egui_ctx.clone();
                 wasm_bindgen_futures::spawn_local(async move {
                     let normal = rand_distr::Normal::new(0.0, 1.0).unwrap();
-                    let mut last_value = 100.0;
+                    let mut last_value = 1.0;
                     loop {
                         data_producer.borrow_mut().push_back(last_value);
                         if data_producer.borrow_mut().len() > 100 {
