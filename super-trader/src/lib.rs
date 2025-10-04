@@ -1,6 +1,7 @@
 use std::{cell::RefCell, collections::VecDeque, rc::Rc};
 
-use egui::{Button, Color32, RichText};
+use chrono::{DateTime, Local};
+use egui::{Button, Color32, Hyperlink, RichText};
 use egui_plot::{Line, Plot};
 use gloo_timers::future::TimeoutFuture;
 use rand_distr::Distribution;
@@ -15,6 +16,8 @@ struct HelloApp {
     cash: f64,
     shares_count: u64,
     ref_portfolio_worth: f64,
+    game_over: Rc<RefCell<Option<DateTime<Local>>>>,
+    game_begin: DateTime<Local>,
 }
 
 impl eframe::App for HelloApp {
@@ -35,6 +38,19 @@ impl eframe::App for HelloApp {
                 .num_columns(2)
                 .striped(true)
                 .show(ui, |ui| {
+                    if let Some(_game_over_time) = *self.game_over.borrow() {
+                        ui.vertical_centered(|ui| {
+                            ui.label(
+                                RichText::new("Stock collapsed")
+                                    .size(32.0)
+                                    .color(Color32::RED),
+                            );
+                            ui.label(RichText::new(
+                                "Game over, your remaining stocks are sold for 0",
+                            ));
+                            self.shares_count = 0;
+                        });
+                    }
                     if ui
                         .add_sized(
                             [w / 2.0, 60.0],
@@ -122,10 +138,28 @@ impl eframe::App for HelloApp {
                             })
                             .size(font_size),
                     );
+                    ui.end_row();
+
+                    ui.label(RichText::new("ROI (per minute)").size(font_size));
+                    let minutes = Local::now()
+                        .signed_duration_since(self.game_begin)
+                        .as_seconds_f64()
+                        / 60.0;
+                    let growth = portfolio_worth / INIT_CASH;
+                    let roi = growth.powf(1.0 / minutes);
+                    ui.monospace(
+                        RichText::new(format!("{:.2}%", (roi - 1.0) * 100.0)).size(font_size),
+                    );
+                    ui.end_row();
                 });
-            ui.end_row();
         });
         egui::CentralPanel::default().show(ctx, |ui| {
+            ui.vertical_centered(|ui| {
+                ui.add(Hyperlink::from_label_and_url(
+                    "🔗 Repo @ Github ⭐",
+                    "https://github.com/WhiteBlackGoose/super-trader",
+                ));
+            });
             let pts: Vec<[f64; 2]> = self
                 .prices
                 .borrow()
@@ -141,7 +175,6 @@ impl eframe::App for HelloApp {
                 .auto_bounds([true, true])
                 .allow_scroll(false)
                 .allow_boxed_zoom(false)
-                // .height(ui.available_height() * 2.0 / 3.0)
                 .x_axis_formatter({
                     move |name, _r| {
                         let i = x_len as f64 - name.value;
@@ -181,6 +214,8 @@ pub async fn start() -> Result<(), wasm_bindgen::JsValue> {
             Box::new(|cc| {
                 let data = Rc::new(RefCell::new(VecDeque::new()));
                 let data_producer = data.clone();
+                let game_over = Rc::new(RefCell::new(None));
+                let game_over_in = game_over.clone();
 
                 let ctx = cc.egui_ctx.clone();
                 wasm_bindgen_futures::spawn_local(async move {
@@ -192,6 +227,10 @@ pub async fn start() -> Result<(), wasm_bindgen::JsValue> {
                             data_producer.borrow_mut().pop_front();
                         }
                         last_value += normal.sample(&mut rand::rng());
+                        if last_value <= 0.0 {
+                            *game_over_in.borrow_mut() = Some(Local::now());
+                            break;
+                        }
                         TimeoutFuture::new(STEP_MS as u32).await;
                         ctx.request_repaint();
                     }
@@ -200,6 +239,8 @@ pub async fn start() -> Result<(), wasm_bindgen::JsValue> {
                     prices: data,
                     cash: INIT_CASH,
                     shares_count: 0,
+                    game_over,
+                    game_begin: Local::now(),
                     ..Default::default()
                 }))
             }),
