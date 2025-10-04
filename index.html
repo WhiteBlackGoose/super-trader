@@ -11,8 +11,8 @@
          or data-bin if you want the binary. Pick exactly one. -->
     
 <script type="module">
-import init, * as bindings from '/super-trader-c561eabf55434f70.js';
-const wasm = await init({ module_or_path: '/super-trader-c561eabf55434f70_bg.wasm' });
+import init, * as bindings from '/super-trader-62deefa2cfacf469.js';
+const wasm = await init({ module_or_path: '/super-trader-62deefa2cfacf469_bg.wasm' });
 
 
 window.wasmBindings = bindings;
@@ -35,7 +35,7 @@ dispatchEvent(new CustomEvent("TrunkApplicationStarted", {detail: {wasm}}));
         display: block;
       }
     </style>
-  <link rel="modulepreload" href="/super-trader-c561eabf55434f70.js" crossorigin="anonymous" integrity="sha384-3UWfDcmhxZgrkdN47gRJtjDdnHpQAtwq1yMIKE8NI9FQ5lmrZw4qG2H+CNcNXrjV"><link rel="preload" href="/super-trader-c561eabf55434f70_bg.wasm" crossorigin="anonymous" integrity="sha384-1C6Obv2rBYC5YOSQTrRLADtEIcJPLbq4WKtxV9A14Txkcj6o5K/pmxWtN6DD6uDb" as="fetch" type="application/wasm"></head>
+  <link rel="modulepreload" href="/super-trader-62deefa2cfacf469.js" crossorigin="anonymous" integrity="sha384-t/eHhQS8++mv1HyMxJ7dRUPRFS0DptrCdjXg7YqaPW5UIMYxppN26RPphiz4Nba7"><link rel="preload" href="/super-trader-62deefa2cfacf469_bg.wasm" crossorigin="anonymous" integrity="sha384-E0bexNIfbnrhtuf+2cGl6LmbJvb8MOln/zyEsX72PPqenS3IxvOWzBRrIEfngTxj" as="fetch" type="application/wasm"></head>
   <body>
     <canvas id="the_canvas"></canvas>
     <!-- No <script type="module"> import needed:
