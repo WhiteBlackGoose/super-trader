@@ -224,7 +224,7 @@ pub async fn start() -> Result<(), wasm_bindgen::JsValue> {
                 let ctx = cc.egui_ctx.clone();
                 wasm_bindgen_futures::spawn_local(async move {
                     let normal = rand_distr::Normal::new(0.0, 1.0).unwrap();
-                    let mut last_value = 1.0;
+                    let mut last_value = 100.0;
                     loop {
                         data_producer.borrow_mut().push_back(last_value);
                         if data_producer.borrow_mut().len() > 100 {
