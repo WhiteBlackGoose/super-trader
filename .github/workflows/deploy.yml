@@ -1,0 +1,39 @@
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches:
+      - master
+
+permissions:
+  contents: write
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # Install Rust (stable)
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: stable
+
+      # Cache cargo artifacts
+      - uses: Swatinem/rust-cache@v2
+
+      # Install trunk
+      - name: Install Trunk
+        run: cargo install trunk
+
+      # Build with trunk
+      - name: Build
+        run: trunk build --release
+
+      # Deploy dist/ to gh-pages
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./dist

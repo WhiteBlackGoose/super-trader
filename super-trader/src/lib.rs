@@ -1,17 +1,13 @@
 use std::{cell::RefCell, collections::VecDeque, rc::Rc};
 
-use crossbeam_queue::ArrayQueue;
-use egui::{
-    Align, Align2, Area, Button, Color32, DragValue, Frame, Layout, Margin, RichText, TextStyle,
-    Ui, pos2, vec2,
-};
-use egui_plot::{Legend, Line, Plot, PlotPoints, format_number};
-use gloo_timers::future::{IntervalStream, TimeoutFuture};
+use egui::{Button, Color32, RichText};
+use egui_plot::{Line, Plot};
+use gloo_timers::future::TimeoutFuture;
 use rand_distr::Distribution;
 use wasm_bindgen::{JsCast, prelude::wasm_bindgen};
-use wasm_bindgen_futures::spawn_local;
 
 const STEP_MS: u64 = 200;
+const INIT_CASH: f64 = 1000.0;
 
 #[derive(Default)]
 struct HelloApp {
@@ -113,6 +109,19 @@ impl eframe::App for HelloApp {
                             .size(font_size),
                     );
                     ui.end_row();
+
+                    ui.label(RichText::new("Total profit").size(font_size));
+                    ui.monospace(
+                        RichText::new(format!("{:.1}€", portfolio_worth - INIT_CASH))
+                            .color({
+                                if portfolio_worth > INIT_CASH {
+                                    Color32::DARK_GREEN
+                                } else {
+                                    Color32::DARK_RED
+                                }
+                            })
+                            .size(font_size),
+                    );
                 });
             ui.end_row();
         });
@@ -189,7 +198,7 @@ pub async fn start() -> Result<(), wasm_bindgen::JsValue> {
                 });
                 Ok(Box::new(HelloApp {
                     prices: data,
-                    cash: 1000.0,
+                    cash: INIT_CASH,
                     shares_count: 0,
                     ..Default::default()
                 }))
