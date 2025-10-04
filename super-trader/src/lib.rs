@@ -1,8 +1,11 @@
 use std::{cell::RefCell, collections::VecDeque, rc::Rc};
 
 use crossbeam_queue::ArrayQueue;
-use egui::{Align, Button, Color32, DragValue, Frame, Layout, RichText, TextStyle};
-use egui_plot::{Legend, Line, Plot, PlotPoints};
+use egui::{
+    Align, Align2, Area, Button, Color32, DragValue, Frame, Layout, Margin, RichText, TextStyle,
+    Ui, pos2, vec2,
+};
+use egui_plot::{Legend, Line, Plot, PlotPoints, format_number};
 use gloo_timers::future::{IntervalStream, TimeoutFuture};
 use rand_distr::Distribution;
 use wasm_bindgen::{JsCast, prelude::wasm_bindgen};
@@ -29,13 +32,18 @@ impl eframe::App for HelloApp {
         let can_buy = self.cash >= last_price_buy;
         let can_sell = self.shares_count >= 1;
         egui::TopBottomPanel::bottom("ppp").show(ctx, |ui| {
-            ui.columns(2, |cols| {
-                Frame::group(cols[0].style()).show(&mut cols[0], |ui| {
-                    ui.heading("Actions");
+            ui.set_width(ui.available_width());
+            let w = ui.available_width();
+            let portfolio_worth = self.cash + self.shares_count as f64 * last_price_sell;
+            egui::Grid::new("stats_grid")
+                .num_columns(2)
+                .striped(true)
+                .show(ui, |ui| {
                     if ui
-                        .add(
+                        .add_sized(
+                            [w / 2.0, 60.0],
                             Button::new(
-                                RichText::new(format!("BUY x1 for {:.1}€", last_price_buy))
+                                RichText::new(format!("Buy {:.0}€", last_price_buy))
                                     .color(Color32::WHITE) // white text
                                     .size(32.0)
                                     .strong(),
@@ -57,9 +65,10 @@ impl eframe::App for HelloApp {
                         self.shares_count += 1;
                     }
                     if ui
-                        .add(
+                        .add_sized(
+                            [w / 2.0, 60.0],
                             Button::new(
-                                RichText::new(format!("SELL x1 for {:.1}€", last_price_sell))
+                                RichText::new(format!("Sell {:.0}€", last_price_sell))
                                     .color(Color32::WHITE) // white text
                                     .size(32.0)
                                     .strong(),
@@ -77,37 +86,35 @@ impl eframe::App for HelloApp {
                         self.cash += last_price_sell;
                         self.shares_count -= 1;
                     }
-                });
-                Frame::group(cols[1].style()).show(&mut cols[1], |ui| {
-                    let portfolio_worth = self.cash + self.shares_count as f64 * last_price_sell;
-                    egui::Grid::new("stats_grid")
-                        .num_columns(2)
-                        .striped(true)
-                        .show(ui, |ui| {
-                            ui.label("Cash");
-                            ui.monospace(format!("{:.1}€", self.cash));
-                            ui.end_row();
 
-                            ui.label("Shares");
-                            ui.monospace(format!("{}", self.shares_count));
-                            ui.end_row();
+                    ui.end_row();
 
-                            ui.label("Worth");
-                            ui.monospace(RichText::new(format!("{:.1}€", portfolio_worth)).color(
-                                {
-                                    if self.shares_count == 0 {
-                                        Color32::DARK_GRAY
-                                    } else if portfolio_worth > self.ref_portfolio_worth {
-                                        Color32::DARK_GREEN
-                                    } else {
-                                        Color32::DARK_RED
-                                    }
-                                },
-                            ));
-                            ui.end_row();
-                        });
+                    let font_size = 24.0;
+                    ui.label(RichText::new("Cash").size(font_size));
+                    ui.monospace(RichText::new(format!("{:.1}€", self.cash)).size(font_size));
+                    ui.end_row();
+
+                    ui.label(RichText::new("Shares").size(font_size));
+                    ui.monospace(RichText::new(format!("{}", self.shares_count)).size(font_size));
+                    ui.end_row();
+
+                    ui.label(RichText::new("Worth").size(font_size));
+                    ui.monospace(
+                        RichText::new(format!("{:.1}€", portfolio_worth))
+                            .color({
+                                if self.shares_count == 0 {
+                                    Color32::DARK_GRAY
+                                } else if portfolio_worth > self.ref_portfolio_worth {
+                                    Color32::DARK_GREEN
+                                } else {
+                                    Color32::DARK_RED
+                                }
+                            })
+                            .size(font_size),
+                    );
+                    ui.end_row();
                 });
-            });
+            ui.end_row();
         });
         egui::CentralPanel::default().show(ctx, |ui| {
             let pts: Vec<[f64; 2]> = self
@@ -125,12 +132,14 @@ impl eframe::App for HelloApp {
                 .auto_bounds([true, true])
                 .allow_scroll(false)
                 .allow_boxed_zoom(false)
+                // .height(ui.available_height() * 2.0 / 3.0)
                 .x_axis_formatter({
                     move |name, _r| {
                         let i = x_len as f64 - name.value;
                         format!("-{:.0}s", i * STEP_MS as f64 / 1000.0)
                     }
                 })
+                .y_axis_formatter(|name, _| format!("{:.0}€", name.value))
                 .show(ui, |plot_ui| {
                     // main series with filled area
                     plot_ui.line(Line::new("price", pts));
@@ -166,8 +175,8 @@ pub async fn start() -> Result<(), wasm_bindgen::JsValue> {
 
                 let ctx = cc.egui_ctx.clone();
                 wasm_bindgen_futures::spawn_local(async move {
-                    let normal = rand_distr::Normal::new(0.0, 3.0).unwrap();
-                    let mut last_value = 300.0;
+                    let normal = rand_distr::Normal::new(0.0, 1.0).unwrap();
+                    let mut last_value = 100.0;
                     loop {
                         data_producer.borrow_mut().push_back(last_value);
                         if data_producer.borrow_mut().len() > 100 {
