@@ -163,6 +163,7 @@ impl eframe::App for HelloApp {
                     "🔗 Repo @ Github ⭐",
                     "https://github.com/WhiteBlackGoose/super-trader",
                 ));
+                ui.label("Maximize your profit by buying and selling the imaginary stock!");
             });
             let pts: Vec<[f64; 2]> = self
                 .prices
