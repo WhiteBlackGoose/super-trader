@@ -29,11 +29,13 @@ jobs:
 
       # Build with trunk
       - name: Build
-        run: trunk build --release
+        run: |
+          cd ./super-trader
+          trunk build --release
 
       # Deploy dist/ to gh-pages
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./dist
+          publish_dir: ./super-trader/dist
